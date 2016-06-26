@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ReadAndCoder;
 
-namespace Signature
+namespace Signaturer
 {
     class Program
     {
@@ -41,7 +41,20 @@ namespace Signature
 
             // создаём объект кодировщика и получаем сигнатуру файла
             Coder coder = new Coder(_filePath, _sizePart);
-            coder.GetSignature();
+            SortedDictionary<Int64, byte[]> signaturs = coder.CreateSignature();
+
+            // вывод на экран
+            foreach (long parts in signaturs.Keys)
+            {
+                Console.Write(parts + ": ");
+                foreach (byte b in signaturs[parts])
+                {
+                    Console.Write(b);
+                }
+                Console.WriteLine();
+            }
+
+            
 
 
 
