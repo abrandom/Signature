@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using ReadAndCoder;
 
 namespace Signature
 {
@@ -42,9 +43,9 @@ namespace Signature
             Coder coder = new Coder(_filePath, _sizePart);
             coder.GetSignature();
 
-            
 
-            
+
+            Console.WriteLine("Successful. Press any key to exit.");
             Console.ReadKey();
 
             
