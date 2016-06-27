@@ -51,6 +51,7 @@ namespace Signature
             Console.ReadKey();
         }
 
+        // преобразуем байтовый массив сигнатур в эквивалентное ему шестнадцатеричное строковое представление.
         private static string HexSignatureConverter(SortedDictionary<long, byte[]> signaturs)
         {
             string resultString = "\n";
