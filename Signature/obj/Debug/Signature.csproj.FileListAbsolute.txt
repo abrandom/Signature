@@ -1,0 +1,8 @@
+D:\Coding\C#\visual studio 2013\Signature\Signature\bin\Debug\Signature.exe.config
+D:\Coding\C#\visual studio 2013\Signature\Signature\bin\Debug\Signature.exe
+D:\Coding\C#\visual studio 2013\Signature\Signature\bin\Debug\Signature.pdb
+D:\Coding\C#\visual studio 2013\Signature\Signature\obj\Debug\Signature.csprojResolveAssemblyReference.cache
+D:\Coding\C#\visual studio 2013\Signature\Signature\obj\Debug\Signature.exe
+D:\Coding\C#\visual studio 2013\Signature\Signature\obj\Debug\Signature.pdb
+D:\Coding\C#\visual studio 2013\Signature\Signature\bin\Debug\ReadAndCoder.dll
+D:\Coding\C#\visual studio 2013\Signature\Signature\bin\Debug\ReadAndCoder.pdb

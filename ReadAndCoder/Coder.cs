@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace ReadAndCoder
 {
@@ -17,17 +14,43 @@ namespace ReadAndCoder
         private long _countParts;                   // количество частей
         private object _locker = new object();      // локер
 
-        // в конструкторе указываем корректные путь к файлу и размер части в байтах
+        // в конструкторе указываем корректные путь к файлу и размер части в байтах,
+        // проверяем данные на корректность,
         // а так же инициализируем все необходимые параметры
-        public Coder(string path, long part) {
+        public Coder(string path, string part)
+        {
+            long longPart;
+
+            if (!IsCorrectParam(path, part, out longPart))
+            {
+                throw new ArgumentException(); 
+            }
+
             _filePath = path;
-            _sizePart = part;
+            _sizePart = longPart;
 
             _countParts = GetCountOfParts();
             _signature = new Signature(_countParts);
             _queueParts = QueuePartsCreator(_countParts);
         }
 
+        // проверяем корректность введенных данных
+        private bool IsCorrectParam(string path, string stringPart, out long longPart)
+        {
+            if (File.Exists(path) &&                        // файл существует
+                Int64.TryParse(stringPart, out longPart) && // размер части указан корректным числом
+                longPart > 0)                               // размер части положительный
+            {
+                // если всё верно, то выходим, возвращая true
+                return true;
+            }
+            // иначе, чтобы не ругался компилятор, присваиваем значение
+            longPart = 0;
+            // и выходим, возвращая false
+            return false;
+        }
+
+        // функция, создающая сигнатуру
         public SortedDictionary<Int64, byte[]> CreateSignature()
         {
             int countThreads = 4;   // количество потоков-обработчиков

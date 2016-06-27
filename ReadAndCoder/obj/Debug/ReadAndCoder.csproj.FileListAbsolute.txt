@@ -1,0 +1,5 @@
+D:\Coding\C#\visual studio 2013\Signature\ReadAndCoder\bin\Debug\ReadAndCoder.dll
+D:\Coding\C#\visual studio 2013\Signature\ReadAndCoder\bin\Debug\ReadAndCoder.pdb
+D:\Coding\C#\visual studio 2013\Signature\ReadAndCoder\obj\Debug\ReadAndCoder.csprojResolveAssemblyReference.cache
+D:\Coding\C#\visual studio 2013\Signature\ReadAndCoder\obj\Debug\ReadAndCoder.dll
+D:\Coding\C#\visual studio 2013\Signature\ReadAndCoder\obj\Debug\ReadAndCoder.pdb

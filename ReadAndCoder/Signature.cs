@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ReadAndCoder {
-    class Signature
+    internal class Signature
     {
         // для хранения сигнатуры используем словарь с ключами-номерами частей
         // и значениями-байтовыми хеш-массивами
