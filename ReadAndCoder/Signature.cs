@@ -8,6 +8,8 @@ namespace ReadAndCoder {
         // и значениями-байтовыми хеш-массивами
         private SortedDictionary<Int64, byte[]> _signature;
 
+        private object _locker = new object();  // локер
+
         internal Signature(long countOfParts)
         {
             // создаём объект-словарь
@@ -23,7 +25,11 @@ namespace ReadAndCoder {
         // для указанной части добавляем байтовую сигнатуру
         internal void AddPartSignature(long part, byte[] signBytes)
         {
-            _signature.Add(part, signBytes);
+            // в один момент времени писать может только один поток
+            lock (_locker)
+            {
+                _signature.Add(part, signBytes);
+            }
         }
 
     }
