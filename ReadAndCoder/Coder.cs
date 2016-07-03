@@ -1,176 +1,120 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
-using System.Threading;
+using System.Threading.Tasks;
 
 namespace ReadAndCoder
 {
-    public class Coder {
-        private readonly long _sizePart;            // размер части
+    public class Coder: ICoder {
+        private readonly int _sizePart;             // размер части
         private readonly string _filePath;          // путь
-        private Queue<Int64> _queueParts;           // очередь частей
-        private Signature _signature;               // объект с сигнатурой файла
-        private long _countParts;                   // количество частей
-        private object _locker = new object();      // локер
+        private readonly Signature _signature;      // объект с сигнатурой файла
+        private readonly BlockingCollection<PartOfFile> _queueParts;    
 
         // в конструкторе указываем корректные путь к файлу и размер части в байтах,
         // проверяем данные на корректность,
         // а так же инициализируем все необходимые параметры
-        public Coder(string path, string part)
+        public Coder(string path, int part)
         {
-            long longPart;
-
-            if (!IsCorrectParam(path, part, out longPart))
-            {
-                throw new ArgumentException(); 
-            }
-
             _filePath = path;
-            _sizePart = longPart;
+            _sizePart = part;
 
-            _countParts = GetCountOfParts();
-            _signature = new Signature(_countParts);
-            _queueParts = QueuePartsCreator(_countParts);
+            _queueParts = new BlockingCollection<PartOfFile>();
+            _signature = new Signature();
+
+            CreateSignature();
         }
 
-        // проверяем корректность введенных данных
-        private bool IsCorrectParam(string path, string stringPart, out long longPart)
+        private void CreateSignature()
         {
-            if (File.Exists(path) &&                        // файл существует
-                Int64.TryParse(stringPart, out longPart) && // размер части указан корректным числом
-                longPart > 0)                               // размер части положительный
+            Task producer = Task.Factory.StartNew(ReadFile);
+
+            int countConsumers = Environment.ProcessorCount;   // количество потоков-обработчиков соответствует количеству доступных процессоров        
+            Task[] consumers = new Task[countConsumers];
+            for (int i = 0; i < countConsumers; i++)
             {
-                // если всё верно, то выходим, возвращая true
-                return true;
+                consumers[i] = Task.Factory.StartNew(CodeAndRecord);
             }
-            // иначе, чтобы не ругался компилятор, присваиваем значение
-            longPart = 0;
-            // и выходим, возвращая false
-            return false;
+
+            Task.WaitAll(consumers);
         }
 
-        // функция, создающая сигнатуру
-        public SortedDictionary<Int64, byte[]> CreateSignature()
+        // читаем файл блоками
+        private void ReadFile()
         {
-            int countThreads = 4;   // количество потоков-обработчиков
+            long countOfParts = 0;
+            byte[] buffer = new byte[_sizePart];
             
-            // создаём потоки-обработчики на основе ф-ии Task и запускаем их
-            Thread[] packetThreads = new Thread[countThreads];
-            for (int i = 0; i < countThreads; i++)
-            {
-                packetThreads[i] = new Thread(Task);
-                packetThreads[i].Start();
-            }
-
-            // ждем, пока отработают
-            for (int i = 0; i < countThreads; i++)
-            {
-                packetThreads[i].Join();
-            }
-
-            return _signature.GetSignature();
-        }
-
-        // функция потока, которая берет из очереди номер части, 
-        // читает из файла нужный кусок байт
-        // и получает его SHA256-хэш
-        private void Task()
-        {
-            long numberPart;                        // номер полученной части
-           
-            // бесконечный цикл, пока из очереди не вытащат все элементы
-            while (true)
-            {
-                // изменять очередь частей может только один поток,
-                // блокируем доступ остальным
-                lock (_locker)
-                {
-                    // если в очереди больше нет элементов, то завершаем работу потоков
-                    if (_queueParts.Count == 0)
-                    {
-                        return; // точка выхода
-                    }
-
-                    // забираем из очереди номер текущей части
-                    numberPart = _queueParts.Dequeue();
-                }
-                // дальнейшие действия не требуют блокировки общего ресурса
-
-                // читаем данные и отправляем их кодировщику
-                CodeAndRecord(numberPart, ReadPartFile(numberPart));     
-            }
-        }
-
-        // читаем часть файла
-        private byte[] ReadPartFile(long numberPart)
-        {
-            int readedByte;                         // переменная, в которую считывается 1 байт
-            byte[] buffer = new byte[_sizePart];    // массив для хранения байт в части
-
             using (FileStream codedFile = new FileStream(_filePath, FileMode.Open, FileAccess.Read))
             {
-                // переходим на позицию для начала побайтового считывания
-                codedFile.Seek(numberPart*_sizePart, SeekOrigin.Begin);
-
-                // для каждой части заполняем буфер
-                for (long i = 0; i < _sizePart; i++)
+                while (true)
                 {
-                    // читаем байт
-                    readedByte = codedFile.ReadByte();
-                    // если он прочитан, то забрасываем в буфер
-                    if (readedByte != -1)
-                    {
-                        buffer[i] = (byte) readedByte;
-                    }
-                    // иначе (в последней части количество байт может оказаться меньше, чем размер буфера)
-                    // достигли конец части и добиваем буфер нулями
-                    else
-                    {
-                        for (; i < _sizePart; i++)
-                        {
-                            buffer[i] = 0;
-                        }
-                    }
-                }
-            }
+                    int readedBytes = codedFile.Read(buffer, 0, _sizePart);
 
-        return buffer;
+                    if (readedBytes == 0)
+                    {
+                        break;
+                    }
+
+                    _queueParts.Add(new PartOfFile(countOfParts++, buffer));
+                }
+
+                _queueParts.CompleteAdding();
+            }   
         }
 
         // добавляем сигнатуру части в общий список
-        private void CodeAndRecord(long numberPart, byte[] filePart)
+        private void CodeAndRecord()
         {
-            SHA256 mySha256 = SHA256.Create();
-            _signature.AddPartSignature(numberPart, mySha256.ComputeHash(filePart));
+            PartOfFile partOfFile;
+
+            while (true)
+            {
+                try
+                {
+                    partOfFile = _queueParts.Take();
+                }
+                catch (InvalidOperationException)
+                {
+                    if (_queueParts.IsAddingCompleted)
+                    {
+                        return;
+                    }
+
+                    throw;
+                }
+
+                SHA256 mySha256 = SHA256.Create();
+
+                _signature.AddPartSignature(partOfFile.GetNumberPart(),
+                    mySha256.ComputeHash(partOfFile.GetPartOfFile()));
+            }
         }
 
-        // создание очереди из частей
-        private Queue<Int64> QueuePartsCreator(long count)
+        public SortedDictionary<Int64, byte[]> GetByteArraySignature()
         {
-            Queue<Int64> queueParts = new Queue<long>();
+            return _signature.GetSignature(); 
+        }
 
-            for (long i = 0; i < count; i++)
+        public SortedDictionary<Int64, string> GetHashStringSignature()
+        {
+            ConcurrentDictionary<Int64, string> hashStringConcurrentDictionary = new ConcurrentDictionary<long, string>();
+
+            // т.к. при малых размерах "блоков" и большом размере файла количество хеш-блоков может оказаться достаточно большим,
+            // распараллеливаем задачу преобразования в строку
+            Parallel.ForEach(GetByteArraySignature().AsParallel(), pair =>
             {
-                queueParts.Enqueue(i);
-            }
-
-            return queueParts;
-        } 
-
-        // количество частей, на которые будем разбивать файл
-        private long GetCountOfParts() {
-            FileInfo codedFile = new FileInfo(_filePath);
-            long sizeFile = codedFile.Length;
-            long countOfParts = sizeFile / _sizePart;
-
-            // если размер файла не кратен размеру части, то
-            // добавляем часть на отброшенный при делении остаток
-            if (sizeFile % _sizePart != 0) {
-                countOfParts++;
-            }
-
-            return countOfParts;
+                hashStringConcurrentDictionary.TryAdd(pair.Key,
+                    BitConverter.ToString(pair.Value).Replace("-", ""));
+            });
+            
+            // создаём отсортированный словарь на основе конкурентного
+            SortedDictionary<Int64, string> hashStringSignature = new SortedDictionary<Int64, string>(hashStringConcurrentDictionary);
+            
+            return hashStringSignature;
         }
     }
 }

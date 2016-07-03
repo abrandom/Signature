@@ -11,18 +11,22 @@ namespace Signature
         {
             try
             {
-                // проверяем наличие обоих аргументов
-                if (args.Length != 2)
+                int sizePart;
+                
+                if (!IsCorrectParam(args, out sizePart))
                 {
                     throw new ArgumentException();
                 }
+                string path = args[0];
 
-                // создаём объект кодировщика и получаем сигнатуру файла
-                Coder coder = new Coder(args[0], args[1]);
-                SortedDictionary<long, byte[]> signaturs = coder.CreateSignature();
-
+                // создаём объект кодировщика
+                Coder coder = new Coder(path, sizePart);
+                
                 // распечатываем сигнатуры
-                Console.WriteLine(HexSignatureConverter(signaturs));
+                foreach (KeyValuePair<long, string> pair in coder.GetHashStringSignature())
+                {
+                    Console.WriteLine(pair.Key + ":\t" + pair.Value);
+                }
 
                 Console.Write("Successful. ");
             }
@@ -30,7 +34,7 @@ namespace Signature
             catch (ArgumentException)
             {
                 Console.WriteLine("Illegal argiments!\n" +
-                                  "Used: Signeture.exe File_Name Size_of_part_in_Bytes\n");
+                                  "Used: Signature.exe File_Name Size_of_part_in_Bytes\n");
             }
             // ошибки ввода-вывода
             catch (IOException e)
@@ -51,17 +55,24 @@ namespace Signature
             Console.ReadKey();
         }
 
-        // преобразуем байтовый массив сигнатур в эквивалентное ему шестнадцатеричное строковое представление.
-        private static string HexSignatureConverter(SortedDictionary<long, byte[]> signaturs)
-        {
-            string resultString = "\n";
+        
 
-            // создаём строку с hex-представлением массива байт
-            foreach (long parts in signaturs.Keys) {
-                resultString += parts + ": " + BitConverter.ToString(signaturs[parts]) + "\n";
+        // проверяем корректность введенных данных
+        private static bool IsCorrectParam(string[] args, out int sizePart)
+        {
+            if (args.Length == 2 &&                         // ровно два аргумента
+                File.Exists(args[0]) &&                     // файл существует
+                Int32.TryParse(args[1], out sizePart) &&    // размер части указан корректным числом
+                sizePart > 0)                               // размер части положительный
+            {
+                // если всё верно, то выходим, возвращая true
+                return true;
             }
 
-            return resultString.Replace("-", "");
+            // иначе, чтобы не ругался компилятор, присваиваем значение
+            sizePart = 0;
+            // и выходим, возвращая false
+            return false;
         }
     }
 }

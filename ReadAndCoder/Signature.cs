@@ -7,12 +7,10 @@ namespace ReadAndCoder {
         // для хранения сигнатуры используем словарь с ключами-номерами частей
         // и значениями-байтовыми хеш-массивами
         private SortedDictionary<Int64, byte[]> _signature;
+        private object _locker = new object();  
 
-        private object _locker = new object();  // локер
-
-        internal Signature(long countOfParts)
+        internal Signature()
         {
-            // создаём объект-словарь
             _signature = new SortedDictionary<long, byte[]>();
         }
 
