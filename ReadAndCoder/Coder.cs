@@ -8,14 +8,14 @@ using System.Threading.Tasks;
 namespace ReadAndCoder
 {
     public class Coder: ICoder {
-        private readonly int _sizePart;             // размер части
-        private readonly string _filePath;          // путь
-        private Signature _signature;               // объект с сигнатурой файла
+        private readonly int _sizePart;             //размер части
+        private readonly string _filePath;          //путь
+        private Signature _signature;               //объект с сигнатурой файла
         private BlockingCollection<PartOfFile> _queueParts;
         private bool _isSignatureCreated;
 
-        // указываем корректные путь к файлу и размер части в байтах,
-        // инициализируем все необходимые параметры
+        //указываем корректные путь к файлу и размер части в байтах,
+        //инициализируем все необходимые параметры
         public Coder(string path, int part)
         {
             _filePath = path;
@@ -27,44 +27,15 @@ namespace ReadAndCoder
 
         public void CreateSignature()
         {
-            Task producer = null;
-            Task[] consumers = null;
-            int countConsumers = Environment.ProcessorCount;   // количество потоков-обработчиков соответствует количеству доступных процессоров        
+            //реализован шаблон поставщик-потребители
+            //распараллеливание потребления поручим системе
 
             try
             {
-                producer = Task.Factory.StartNew(ReadFile);
-                
-                consumers = new Task[countConsumers];
-                for (int i = 0; i < countConsumers; i++)
-                {
-                    consumers[i] = Task.Factory.StartNew(CodeAndRecord);
-                }
-
-                producer.Wait();
-                Task.WaitAll(consumers);
-            }
-            catch (AggregateException e)
-            {
-                Console.WriteLine(e);
-                throw;
+                Parallel.Invoke(ReadFile, CodeAndRecord);
             }
             finally
             {
-                if (producer != null)
-                {
-                    producer.Dispose();
-                }
-                
-                for (int i = 0; i < countConsumers; i++)
-                {
-                    if (consumers != null && consumers[i] != null)
-                    {
-                        consumers[i].Dispose();
-                    }
-                    
-                }
-
                 if (_queueParts != null)
                 {
                     _queueParts.Dispose();
@@ -74,7 +45,7 @@ namespace ReadAndCoder
             _isSignatureCreated = true;
         }
 
-        // читаем файл блоками
+        //читаем файл блоками и добавляем в очередь
         private void ReadFile()
         {
             long countOfParts = 0;
@@ -94,11 +65,9 @@ namespace ReadAndCoder
 
                 _queueParts.CompleteAdding();
             } 
-  
-            Console.WriteLine("File is Readed");
         }
 
-        // добавляем сигнатуру части в общий список
+        //берем блок из очереди, кодируем и добавляем сигнатуру части в общий список
         private void CodeAndRecord()
         {
             PartOfFile partOfFile;
@@ -113,14 +82,11 @@ namespace ReadAndCoder
                 {
                     if (_queueParts.IsAddingCompleted)
                     {
-                        Console.WriteLine("File is coded");
                         return;
                     }
 
                     throw;
                 }
-
-                //ByteArrayPrinter(partOfFile.GetPartOfFile());
 
                 SHA256 mySha256 = SHA256.Create();
 
@@ -151,6 +117,7 @@ namespace ReadAndCoder
             return hashStringSignature;
         }
 
+        //проверяет наличие сигнатуры
         private void IsSignatureNotCreated()
         {
             if (!_isSignatureCreated)

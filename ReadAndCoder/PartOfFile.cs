@@ -2,6 +2,7 @@
 
 namespace ReadAndCoder
 {
+    //служебный класс для обмена данными
     internal class PartOfFile
     {
         private long _numberPart;
