@@ -3,8 +3,11 @@ using System.Collections.Generic;
 
 namespace ReadAndCoder
 {
-    interface ICoder
+    public interface ICoder
     {
+        // создать сигнатуру
+        void CreateSignature();
+        
         // получаем словарь с сигнатурой "как есть"
         SortedDictionary<Int64, byte[]> GetByteArraySignature();
 

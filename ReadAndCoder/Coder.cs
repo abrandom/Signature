@@ -10,12 +10,12 @@ namespace ReadAndCoder
     public class Coder: ICoder {
         private readonly int _sizePart;             // размер части
         private readonly string _filePath;          // путь
-        private Signature _signature;      // объект с сигнатурой файла
-        private BlockingCollection<PartOfFile> _queueParts;    
+        private Signature _signature;               // объект с сигнатурой файла
+        private BlockingCollection<PartOfFile> _queueParts;
+        private bool _isSignatureCreated;
 
-        // в конструкторе указываем корректные путь к файлу и размер части в байтах,
-        // проверяем данные на корректность,
-        // а так же инициализируем все необходимые параметры
+        // указываем корректные путь к файлу и размер части в байтах,
+        // инициализируем все необходимые параметры
         public Coder(string path, int part)
         {
             _filePath = path;
@@ -23,39 +23,55 @@ namespace ReadAndCoder
 
             _queueParts = new BlockingCollection<PartOfFile>();
             _signature = new Signature();
-
-            CreateSignature();
         }
 
-        private void CreateSignature()
+        public void CreateSignature()
         {
-            Task producer = Task.Factory.StartNew(ReadFile);
-
-            int countConsumers = 1;//Environment.ProcessorCount;   // количество потоков-обработчиков соответствует количеству доступных процессоров        
-            Task[] consumers = new Task[countConsumers];
-            for (int i = 0; i < countConsumers; i++)
-            {
-                consumers[i] = Task.Factory.StartNew(CodeAndRecord);
-            }
+            Task producer = null;
+            Task[] consumers = null;
+            int countConsumers = Environment.ProcessorCount;   // количество потоков-обработчиков соответствует количеству доступных процессоров        
 
             try
             {
+                producer = Task.Factory.StartNew(ReadFile);
+                
+                consumers = new Task[countConsumers];
+                for (int i = 0; i < countConsumers; i++)
+                {
+                    consumers[i] = Task.Factory.StartNew(CodeAndRecord);
+                }
+
                 producer.Wait();
                 Task.WaitAll(consumers);
             }
             catch (AggregateException e)
             {
                 Console.WriteLine(e);
+                throw;
             }
             finally
             {
-                producer.Dispose();
+                if (producer != null)
+                {
+                    producer.Dispose();
+                }
+                
                 for (int i = 0; i < countConsumers; i++)
                 {
-                    consumers[i].Dispose();
+                    if (consumers != null && consumers[i] != null)
+                    {
+                        consumers[i].Dispose();
+                    }
+                    
                 }
-                _queueParts.Dispose();
+
+                if (_queueParts != null)
+                {
+                    _queueParts.Dispose();
+                }
             }
+
+            _isSignatureCreated = true;
         }
 
         // читаем файл блоками
@@ -66,17 +82,14 @@ namespace ReadAndCoder
             
             using (FileStream codedFile = new FileStream(_filePath, FileMode.Open, FileAccess.Read))
             {
-                while (true)
+                int readedBytes;
+
+                while ((readedBytes = codedFile.Read(buffer, 0, buffer.Length)) > 0)
                 {
-                    int readedBytes = codedFile.Read(buffer, 0, buffer.Length);
+                    byte[] readedByteArray = new byte[readedBytes];
+                    Array.Copy(buffer, readedByteArray, readedBytes);
 
-                    if (readedBytes == 0)
-                    {
-                        break;
-                    }
-
-                    ByteArrayPrinter(buffer);
-                    _queueParts.Add(new PartOfFile(countOfParts++, buffer));
+                    _queueParts.Add(new PartOfFile(countOfParts++, readedByteArray));
                 }
 
                 _queueParts.CompleteAdding();
@@ -89,8 +102,8 @@ namespace ReadAndCoder
         private void CodeAndRecord()
         {
             PartOfFile partOfFile;
-
-            while (true)
+           
+            while (!_queueParts.IsCompleted)
             {
                 try
                 {
@@ -118,11 +131,15 @@ namespace ReadAndCoder
 
         public SortedDictionary<Int64, byte[]> GetByteArraySignature()
         {
+            IsSignatureNotCreated();
+
             return _signature.GetSignature(); 
         }
 
         public SortedDictionary<Int64, string> GetHashStringSignature()
         {
+            IsSignatureNotCreated();
+            
             SortedDictionary<Int64, string> hashStringSignature = new SortedDictionary<Int64, string>();
             
             foreach (KeyValuePair<long, byte[]> pair in GetByteArraySignature())
@@ -134,14 +151,12 @@ namespace ReadAndCoder
             return hashStringSignature;
         }
 
-        // для отладки
-        private void ByteArrayPrinter(byte[] arrBytes)
+        private void IsSignatureNotCreated()
         {
-            for (int i = 0; i < 100; i++)
+            if (!_isSignatureCreated)
             {
-                Console.Write(arrBytes[i] + " ");
+                throw new MissingMethodException("The signature has not been created");
             }
-            Console.WriteLine("\n***********");
         }
     }
 }

@@ -12,7 +12,7 @@ namespace Signature
             try
             {
                 int sizePart;
-                
+
                 if (!IsCorrectParam(args, out sizePart))
                 {
                     throw new ArgumentException();
@@ -20,9 +20,12 @@ namespace Signature
                 string path = args[0];
 
                 // создаём объект кодировщика
-                Coder coder = new Coder(path, sizePart);
-                
-                // распечатываем сигнатуры
+                ICoder coder = new Coder(path, sizePart);
+
+                // создаём сигнатуру
+                coder.CreateSignature();
+
+                // распечатываем сигнатуру
                 foreach (KeyValuePair<long, string> pair in coder.GetHashStringSignature())
                 {
                     Console.WriteLine(pair.Key + ":\t" + pair.Value);
@@ -30,16 +33,29 @@ namespace Signature
 
                 Console.Write("Successful. ");
             }
-            // ошибки неверно введенных данных
+                // ошибки неверно введенных данных
             catch (ArgumentException)
             {
                 Console.WriteLine("Illegal argiments!\n" +
                                   "Used: Signature.exe File_Name Size_of_part_in_Bytes\n");
             }
-            // ошибки ввода-вывода
+                // ошибки ввода-вывода
             catch (IOException e)
             {
                 Console.WriteLine("I/O exception: " +
+                                  e.Message + "\n" +
+                                  e.StackTrace);
+            }
+                // ошибки в потоках-обработчикаж
+            catch (AggregateException e)
+            {
+                Console.WriteLine("Thread exception: " +
+                                  e.Message + "\n" +
+                                  e.StackTrace);
+            }
+            catch (MissingMethodException e)
+            {
+                Console.WriteLine("Use \"CreateSignature()\" method before encoding: " +
                                   e.Message + "\n" +
                                   e.StackTrace);
             }
