@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Signature", "Signature\Sign
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReadAndCoder", "ReadAndCoder\ReadAndCoder.csproj", "{7BBB4C08-CC0F-4D80-84CD-969C1BC8F40A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyProgressBar", "MyProgressBar\MyProgressBar.csproj", "{89B342EB-82CE-43D7-83EF-BF5DC6820120}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{7BBB4C08-CC0F-4D80-84CD-969C1BC8F40A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7BBB4C08-CC0F-4D80-84CD-969C1BC8F40A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7BBB4C08-CC0F-4D80-84CD-969C1BC8F40A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{89B342EB-82CE-43D7-83EF-BF5DC6820120}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89B342EB-82CE-43D7-83EF-BF5DC6820120}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89B342EB-82CE-43D7-83EF-BF5DC6820120}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89B342EB-82CE-43D7-83EF-BF5DC6820120}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

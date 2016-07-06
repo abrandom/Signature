@@ -3,7 +3,10 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
+using System.Threading;
 using System.Threading.Tasks;
+using MyProgressBar;
+
 
 namespace ReadAndCoder
 {
@@ -13,6 +16,7 @@ namespace ReadAndCoder
         private Signature _signature;               //объект с сигнатурой файла
         private BlockingCollection<PartOfFile> _queueParts;
         private bool _isSignatureCreated;
+        private long _steps;                         
 
         //указываем корректные путь к файлу и размер части в байтах,
         //инициализируем все необходимые параметры
@@ -20,6 +24,8 @@ namespace ReadAndCoder
         {
             _filePath = path;
             _sizePart = part;
+
+            _steps = 0;
 
             _queueParts = new BlockingCollection<PartOfFile>();
             _signature = new Signature();
@@ -32,7 +38,7 @@ namespace ReadAndCoder
 
             try
             {
-                Parallel.Invoke(ReadFile, CodeAndRecord);
+                Parallel.Invoke(ReadFile, CodedProgressBar, CodeAndRecord);
             }
             finally
             {
@@ -92,7 +98,24 @@ namespace ReadAndCoder
 
                 _signature.AddPartSignature(partOfFile.GetNumberPart(),
                     mySha256.ComputeHash(partOfFile.GetPartOfFile()));
+
+                //увеличиваем счетчик шагов для прогрессбара
+                Interlocked.Increment(ref _steps);
             }
+        }
+
+        private void CodedProgressBar()
+        {
+            //находим количество шагов (размер_файла / размер_блока)
+            long countOfSteps = new FileInfo(_filePath).Length / _sizePart;
+
+            //циклично прорисовываем наш прогрессбар
+            do
+            {
+                Thread.Sleep(100);
+                MyProgressBars.DravTextProgressBar(Interlocked.Read(ref _steps), Interlocked.Read(ref countOfSteps));
+            } while (Interlocked.Read(ref _steps) < Interlocked.Read(ref countOfSteps));
+            Console.WriteLine();
         }
 
         public SortedDictionary<Int64, byte[]> GetByteArraySignature()

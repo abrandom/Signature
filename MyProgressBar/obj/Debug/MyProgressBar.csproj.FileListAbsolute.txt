@@ -1,0 +1,5 @@
+D:\Coding\C#\visual studio 2013\Signature\MyProgressBar\bin\Debug\MyProgressBar.dll
+D:\Coding\C#\visual studio 2013\Signature\MyProgressBar\bin\Debug\MyProgressBar.pdb
+D:\Coding\C#\visual studio 2013\Signature\MyProgressBar\obj\Debug\MyProgressBar.csprojResolveAssemblyReference.cache
+D:\Coding\C#\visual studio 2013\Signature\MyProgressBar\obj\Debug\MyProgressBar.dll
+D:\Coding\C#\visual studio 2013\Signature\MyProgressBar\obj\Debug\MyProgressBar.pdb

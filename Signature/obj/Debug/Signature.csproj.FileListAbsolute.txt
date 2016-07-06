@@ -6,3 +6,5 @@ D:\Coding\C#\visual studio 2013\Signature\Signature\obj\Debug\Signature.exe
 D:\Coding\C#\visual studio 2013\Signature\Signature\obj\Debug\Signature.pdb
 D:\Coding\C#\visual studio 2013\Signature\Signature\bin\Debug\ReadAndCoder.dll
 D:\Coding\C#\visual studio 2013\Signature\Signature\bin\Debug\ReadAndCoder.pdb
+D:\Coding\C#\visual studio 2013\Signature\Signature\bin\Debug\MyProgressBar.dll
+D:\Coding\C#\visual studio 2013\Signature\Signature\bin\Debug\MyProgressBar.pdb
